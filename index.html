@@ -59,8 +59,15 @@ textarea{min-height:84px;resize:vertical}
 .scale button[data-v="3"][aria-pressed=true]{background:var(--r3);color:#fff}
 .scale button[data-v="?"][aria-pressed=true]{background:var(--rq)}
 .scale button[aria-pressed=true] span{color:inherit}
-.note-toggle{background:none;border:0;padding:8px 0 0;color:var(--slate);cursor:pointer;text-decoration:underline;font-size:.9rem}
-.stmt textarea{min-height:60px;font-size:.95rem}
+.stmt label.note{display:block;margin-top:12px;font-size:.9rem;font-weight:700}
+.stmt label.note small{font-weight:400;color:var(--slate)}
+.stmt textarea{min-height:60px;font-size:.95rem;margin-top:4px}
+details.levels{background:var(--paper);border-radius:10px;padding:12px 18px;margin:0 0 18px}
+details.levels summary{cursor:pointer;font-weight:700}
+details.levels dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:12px 0 2px;font-size:.92rem}
+details.levels dt{font-weight:700;white-space:nowrap}
+details.levels dd{margin:0;color:var(--slate)}
+details.levels i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:-1px}
 
 .nav{display:flex;justify-content:space-between;gap:12px;margin-top:26px}
 .btn{border:0;border-radius:8px;padding:12px 20px;font-weight:700;cursor:pointer;background:var(--ink);color:#fff}
@@ -108,10 +115,15 @@ body.fac .wrap{max-width:1280px}
 .srow .tag{display:inline-block;margin-top:6px;font-size:.78rem;font-weight:700;color:var(--flag)}
 .cols{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .col{border-radius:8px;background:var(--mist);padding:6px;min-height:52px}
-.col .h{font-family:var(--mono);font-size:.75rem;color:var(--slate);margin-bottom:4px}
-.chip{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:26px;padding:0 6px;border-radius:13px;font-size:.75rem;font-weight:700;margin:0 3px 3px 0;cursor:default;border:0}
-.chip.v0{background:var(--r0)} .chip.v1{background:var(--r1)} .chip.v2{background:var(--r2);color:#fff} .chip.v3{background:var(--r3);color:#fff} .chip.vq{background:var(--rq)}
-.chip.has-note{box-shadow:0 0 0 2px var(--paper),0 0 0 3.5px var(--ink)}
+.col .h{font-family:var(--mono);font-size:.75rem;color:var(--slate);margin-bottom:6px;padding-top:5px;border-top:4px solid var(--hc)}
+/* Chip colour identifies the person; the column already says which level they chose. */
+.chip{display:flex;align-items:center;gap:5px;width:100%;padding:3px 7px;border-radius:6px;font-size:.78rem;font-weight:700;margin:0 0 4px;cursor:default;border:0;
+  text-align:left;background:color-mix(in srgb,var(--pc) 16%,white);box-shadow:inset 3px 0 0 var(--pc);line-height:1.25}
+.chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip.has-note::after{content:"✎";margin-left:auto;font-weight:400;color:var(--slate)}
+.people{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 18px;font-size:.85rem}
+.people span{display:inline-flex;align-items:center;gap:6px}
+.people i,.who i{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--pc)}
 .blk{border-top:1px solid var(--mist);padding:8px 0;font-size:.9rem}
 .blk .who{color:var(--slate);font-size:.8rem}
 .blk-cap{margin:14px 0 4px;font-weight:700}
@@ -143,6 +155,7 @@ details.paste summary{cursor:pointer;font-weight:700}
       <span class="count" id="count"></span>
     </div>
     <div class="legend" id="legend"></div>
+    <div class="people" id="people" aria-label="People and their colours"></div>
     <div class="fac-grid">
       <div id="board"></div>
       <aside>
@@ -196,7 +209,7 @@ const SCALE = [
   ["1","Ad hoc","The practice appears in isolated cases or depends on a particular person."],
   ["2","Repeatable","Multiple people use an agreed approach for relevant work in this scope."],
   ["3","Embedded","The approach is routinely used, maintained and improved in this scope."],
-  ["?","Can't judge","Insufficient visibility, or no relevant opportunity has occurred."],
+  ["?","Can't judge","I cannot judge from what I observe, or this practice has not had a relevant opportunity to occur. Note which reason applies if useful."],
 ];
 const IDS = CAPS.flatMap(c => c.items.map(i => i[0]));
 const STORE = "agw-participant-v1", FSTORE = "agw-facilitator-v1";
@@ -276,13 +289,16 @@ function renderStep(){
     host.innerHTML = `<div class="step">
       <h2>${esc(c.name)}</h2>
       <p class="lede">Choose what you observe in ${esc(clean(st.scope) || "your scope")} now, not what you'd like to see. A 0 doesn't mean anyone has failed.</p>
+      <details class="levels" open><summary>What the levels mean</summary><dl>
+        ${SCALE.map(([v, l, d]) => `<dt><i style="background:var(--r${v === "?" ? "q" : v})"></i>${v} ${l}</dt><dd>${esc(d)}</dd>`).join("")}
+      </dl></details>
       ${c.items.map(([id, q, ex]) => `<div class="stmt" id="s-${id}">
         <div class="id">${id}</div><p class="q">${esc(q)}</p><p class="ex">${esc(ex)}</p>
         <div class="scale" role="group" aria-label="Rating for ${id}">
-          ${SCALE.map(([v, l, d]) => `<button type="button" data-id="${id}" data-v="${v}" title="${esc(d)}" aria-pressed="${st.r[id] === v}"><b>${v}</b><span>${l}</span></button>`).join("")}
+          ${SCALE.map(([v, l, d]) => `<button type="button" data-id="${id}" data-v="${v}" aria-pressed="${st.r[id] === v}"><b>${v}</b><span>${l}</span></button>`).join("")}
         </div>
-        <button type="button" class="note-toggle" data-note="${id}">${st.n[id] ? "Edit" : "Add"} an example or blocker</button>
-        <textarea class="${st.n[id] ? "" : "hidden"}" data-nt="${id}" aria-label="Example or blocker for ${id}" placeholder="What you've seen, or what's in the way">${esc(st.n[id] || "")}</textarea>
+        <label class="note" for="nt-${id}">Example or blocker <small>(optional)</small></label>
+        <textarea id="nt-${id}" data-nt="${id}" placeholder="What you've seen, or what's in the way">${esc(st.n[id] || "")}</textarea>
       </div>`).join("")}
       <div class="warn hidden" id="wc">Rate every statement, or choose ? if you can't judge it.</div>
       <div class="nav"><button class="btn ghost" id="back">Back</button><button class="btn" id="next">${s === CAPS.length ? "Last question" : "Next capability"}</button></div></div>`;
@@ -290,9 +306,6 @@ function renderStep(){
       st.r[b.dataset.id] = b.dataset.v; save();
       b.parentElement.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
       $("#s-" + b.dataset.id).classList.remove("missing");
-    });
-    host.querySelectorAll("[data-note]").forEach(b => b.onclick = () => {
-      const t = host.querySelector(`[data-nt="${b.dataset.note}"]`); t.classList.remove("hidden"); t.focus();
     });
     host.querySelectorAll("[data-nt]").forEach(t => t.oninput = () => { st.n[t.dataset.nt] = t.value; save(); });
     $("#back").onclick = () => go(s - 1);
@@ -346,7 +359,9 @@ function go(n, animate){ st.step = n; save(); renderStep.animate = !!animate; re
 
 /* ---------- Facilitator ---------- */
 let sortBySpread = false, lastPeople = [];
-const initials = n => n.split(/\s+/).filter(Boolean).map(w => w[0]).join("").slice(0, 3).toUpperCase() || "?";
+// Distinct, mid-saturation hues; assigned in paste order so a person keeps one colour across all statements.
+const PERSON = ["#D1495B","#2E86AB","#E09F3E","#3A7D44","#8E5DB8","#C0507F","#1B998B","#B5651D","#4059AD","#7A8B2B","#9C3D54","#5C6F82"];
+const colourOf = (people, p) => PERSON[people.indexOf(p) % PERSON.length];
 // "Wide spread" = numeric ratings that are two or more levels apart. Deliberately no mean.
 function spreadOf(id, people){
   const v = people.map(p => p.r[id]).filter(x => x && x !== "?").map(Number);
@@ -359,16 +374,17 @@ function renderFac(){
   $("#errors").innerHTML = errors.map(esc).join("<br>");
   $("#count").textContent = `${people.length} receipt${people.length === 1 ? "" : "s"}`;
   $("#legend").innerHTML = SCALE.map(([v, l]) => `<span><i style="background:var(--r${v === "?" ? "q" : v})"></i>${v} ${l}</span>`).join("")
-    + `<span><i style="background:var(--paper);box-shadow:0 0 0 1.5px var(--ink)"></i>ringed = has a note</span><span style="color:var(--flag);font-weight:700">Left edge = ratings two or more levels apart</span>`;
+    + `<span>✎ = has a note (hover to read)</span><span style="color:var(--flag);font-weight:700">Left edge = ratings two or more levels apart</span>`;
+  $("#people").innerHTML = people.map(p => `<span style="--pc:${colourOf(people, p)}"><i></i>${esc(p.name)}${p.scope ? ` <span style="color:var(--slate)">${esc(p.scope)}</span>` : ""}</span>`).join("");
   const chip = (p, id) => {
-    const v = p.r[id], note = p.n[id];
-    return `<button class="chip v${v === "?" ? "q" : v}${note ? " has-note" : ""}" data-tip="${esc(p.name)}${p.scope ? " (" + esc(p.scope) + ")" : ""}${note ? ": " + esc(note) : ""}">${esc(initials(p.name))}</button>`;
+    const note = p.n[id];
+    return `<button class="chip${note ? " has-note" : ""}" style="--pc:${colourOf(people, p)}" data-tip="${esc(p.name)}${p.scope ? " (" + esc(p.scope) + ")" : ""}${note ? ": " + esc(note) : ""}"><span>${esc(p.name)}</span></button>`;
   };
   const row = ([id, q]) => {
     const sp = spreadOf(id, people), unk = people.filter(p => p.r[id] === "?").length;
     return `<div class="srow ${sp >= 2 ? "spread" : ""}"><div class="t"><b>${id}</b>${esc(q)}
       ${sp >= 2 ? `<div class="tag">Ratings differ. Ask about scope.</div>` : ""}${unk && people.length && unk >= people.length / 2 ? `<div class="tag" style="color:var(--slate)">Half or more can't judge this</div>` : ""}</div>
-      <div class="cols">${SCALE.map(([v]) => `<div class="col"><div class="h">${v}</div>${people.filter(p => p.r[id] === v).map(p => chip(p, id)).join("")}</div>`).join("")}</div></div>`;
+      <div class="cols">${SCALE.map(([v]) => `<div class="col"><div class="h" style="--hc:var(--r${v === "?" ? "q" : v})">${v}</div>${people.filter(p => p.r[id] === v).map(p => chip(p, id)).join("")}</div>`).join("")}</div></div>`;
   };
   if (sortBySpread){
     const all = CAPS.flatMap(c => c.items).map(i => [i, spreadOf(i[0], people)]).sort((a, b) => b[1] - a[1]);
@@ -379,9 +395,9 @@ function renderFac(){
   const byCap = CAPS.map(c => ({c, notes: people.flatMap(p => c.items.filter(i => p.n[i[0]]).map(i => ({id:i[0], p, t:p.n[i[0]]})))}));
   const general = people.filter(p => p.blocker);
   const html = byCap.filter(x => x.notes.length).map(x => `<div class="blk-cap">${esc(x.c.name)}</div>` + x.notes.map(o =>
-      `<div class="blk"><b>${o.id}</b> ${esc(o.t)}<div class="who">${esc(o.p.name)}${o.p.scope ? ", " + esc(o.p.scope) : ""}</div></div>`).join("")).join("")
+      `<div class="blk"><b>${o.id}</b> ${esc(o.t)}<div class="who" style="--pc:${colourOf(people, o.p)}"><i></i> ${esc(o.p.name)}${o.p.scope ? ", " + esc(o.p.scope) : ""}</div></div>`).join("")).join("")
     + (general.length ? `<div class="blk-cap">What is blocking you right now?</div>` + general.map(p =>
-      `<div class="blk">${esc(p.blocker)}<div class="who">${esc(p.name)}${p.scope ? ", " + esc(p.scope) : ""}</div></div>`).join("") : "");
+      `<div class="blk">${esc(p.blocker)}<div class="who" style="--pc:${colourOf(people, p)}"><i></i> ${esc(p.name)}${p.scope ? ", " + esc(p.scope) : ""}</div></div>`).join("") : "");
   $("#blockers").innerHTML = html || `<p style="color:var(--slate);font-size:.9rem">Notes appear here once receipts are pasted.</p>`;
 }
 function blockersText(){
