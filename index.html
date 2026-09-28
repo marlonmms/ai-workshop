@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Engineering-practice check · MMS Payment workshop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Atkinson+Hyperlegible+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/*
+  No backend by design: ratings never leave the participant's device.
+  The participant copies a readable "receipt" and pastes it into Lucid;
+  the facilitator pastes all receipts back into #facilitate.
+*/
+:root{
+  --ink:#172033; --slate:#566079; --mist:#E9EDF3; --paper:#FFFFFF; --line:#C9D0DC;
+  --r0:#DCE6F7; --r1:#9DB7E8; --r2:#4F7BD1; --r3:#1F3F8F; --rq:#D5D8DE;
+  --flag:#B8316A;
+  --sans:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Atkinson Hyperlegible Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--sans);color:var(--ink);background:var(--mist);font-size:17px;line-height:1.5}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--r2);outline-offset:2px}
+.wrap{max-width:760px;margin:0 auto;padding:28px 20px 80px}
+header.top{display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-bottom:28px}
+header.top h1{font-size:1.05rem;margin:0;font-weight:700}
+header.top a{color:var(--slate);font-size:.9rem}
+.hidden{display:none!important}
+
+/* Progress rail: six capabilities are a real sequence here */
+.rail{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;margin:0 0 28px}
+.rail span{height:6px;border-radius:3px;background:var(--line)}
+.rail span.done{background:var(--r2)} .rail span.now{background:var(--ink)}
+
+.step h2{font-size:2rem;line-height:1.15;margin:0 0 8px;letter-spacing:-.01em}
+.step .lede{color:var(--slate);margin:0 0 24px;max-width:62ch}
+label.field{display:block;margin:0 0 18px;font-weight:700}
+label.field small{display:block;font-weight:400;color:var(--slate)}
+input[type=text],textarea{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:8px;background:var(--paper);margin-top:6px}
+textarea{min-height:84px;resize:vertical}
+
+.stmt{background:var(--paper);border-radius:10px;padding:18px 18px 14px;margin:0 0 14px;border:1.5px solid transparent}
+.stmt.missing{border-color:var(--flag)}
+.stmt .id{font-family:var(--mono);font-size:.85rem;color:var(--slate)}
+.stmt p.q{margin:2px 0 4px;font-weight:700}
+.stmt p.ex{margin:0 0 12px;color:var(--slate);font-size:.92rem}
+.scale{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.scale button{border:1.5px solid var(--line);background:var(--paper);border-radius:8px;padding:8px 4px;cursor:pointer;text-align:center;line-height:1.2}
+.scale button b{display:block;font-size:1.15rem}
+.scale button span{font-size:.72rem;color:var(--slate)}
+.scale button[aria-pressed=true]{border-color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.scale button[data-v="0"][aria-pressed=true]{background:var(--r0)}
+.scale button[data-v="1"][aria-pressed=true]{background:var(--r1)}
+.scale button[data-v="2"][aria-pressed=true]{background:var(--r2);color:#fff}
+.scale button[data-v="3"][aria-pressed=true]{background:var(--r3);color:#fff}
+.scale button[data-v="?"][aria-pressed=true]{background:var(--rq)}
+.scale button[aria-pressed=true] span{color:inherit}
+.note-toggle{background:none;border:0;padding:8px 0 0;color:var(--slate);cursor:pointer;text-decoration:underline;font-size:.9rem}
+.stmt textarea{min-height:60px;font-size:.95rem}
+
+.nav{display:flex;justify-content:space-between;gap:12px;margin-top:26px}
+.btn{border:0;border-radius:8px;padding:12px 20px;font-weight:700;cursor:pointer;background:var(--ink);color:#fff}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.warn{color:var(--flag);font-size:.92rem;margin:10px 0 0}
+
+/* The receipt: the one bold element */
+.receipt-stage{display:flex;flex-direction:column;align-items:center;gap:20px}
+.receipt{width:min(420px,100%);background:var(--paper);padding:28px 26px 34px;font-family:var(--mono);font-size:.9rem;line-height:1.55;
+  --z:10px;
+  -webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/var(--z) 100%,
+               conic-gradient(from 135deg at top,#0000,#000 1deg 89deg,#0000 90deg) 50%/var(--z) 100%;
+  -webkit-mask-composite:source-in;mask-composite:intersect;
+  filter:drop-shadow(0 6px 14px rgba(23,32,51,.14))}
+.receipt .head{text-align:center;border-bottom:1.5px dashed var(--line);padding-bottom:12px;margin-bottom:12px}
+.receipt .head strong{display:block;font-size:1rem}
+.receipt .row{display:flex;justify-content:space-between;gap:10px}
+.receipt .dots{letter-spacing:.35em}
+.receipt pre{white-space:pre-wrap;word-break:break-word;margin:14px 0 0;padding-top:12px;border-top:1.5px dashed var(--line);font:inherit}
+@media (prefers-reduced-motion:no-preference){
+  .receipt.print{animation:print 1.1s steps(14,end) both}
+  @keyframes print{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0 0 0 0)}}
+}
+.after{max-width:520px;text-align:left}
+.after ol{padding-left:1.2em}
+.copied{color:var(--r3);font-weight:700;min-height:1.5em}
+
+/* Facilitator */
+body.fac .wrap{max-width:1280px}
+.fac-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:start}
+@media (max-width:960px){.fac-grid{grid-template-columns:1fr}}
+.panel{background:var(--paper);border-radius:10px;padding:18px}
+.panel h3{margin:0 0 8px;font-size:1rem}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 16px}
+.toolbar .btn{padding:8px 14px;font-size:.92rem}
+.count{color:var(--slate);margin-left:auto}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.85rem;color:var(--slate);margin:0 0 18px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-1px;margin-right:5px}
+.cap{margin:0 0 26px}
+.cap h4{font-size:1.15rem;margin:0 0 8px}
+.srow{background:var(--paper);border-radius:10px;padding:12px 14px;margin:0 0 8px;display:grid;grid-template-columns:230px 1fr;gap:14px;border-left:5px solid transparent}
+.srow.spread{border-left-color:var(--flag)}
+.srow .t{font-size:.88rem}
+.srow .t b{font-family:var(--mono);font-weight:700;margin-right:6px}
+.srow .tag{display:inline-block;margin-top:6px;font-size:.78rem;font-weight:700;color:var(--flag)}
+.cols{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.col{border-radius:8px;background:var(--mist);padding:6px;min-height:52px}
+.col .h{font-family:var(--mono);font-size:.75rem;color:var(--slate);margin-bottom:4px}
+.chip{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:26px;padding:0 6px;border-radius:13px;font-size:.75rem;font-weight:700;margin:0 3px 3px 0;cursor:default;border:0}
+.chip.v0{background:var(--r0)} .chip.v1{background:var(--r1)} .chip.v2{background:var(--r2);color:#fff} .chip.v3{background:var(--r3);color:#fff} .chip.vq{background:var(--rq)}
+.chip.has-note{box-shadow:0 0 0 2px var(--paper),0 0 0 3.5px var(--ink)}
+.blk{border-top:1px solid var(--mist);padding:8px 0;font-size:.9rem}
+.blk .who{color:var(--slate);font-size:.8rem}
+.blk-cap{margin:14px 0 4px;font-weight:700}
+#tip{position:fixed;z-index:10;max-width:300px;background:var(--ink);color:#fff;padding:8px 10px;border-radius:6px;font-size:.82rem;pointer-events:none}
+.errors{color:var(--flag);font-size:.88rem}
+details.paste summary{cursor:pointer;font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1 id="title">Engineering-practice check</h1>
+    <a href="#facilitate" id="modeLink">Facilitator view</a>
+  </header>
+
+  <!-- PARTICIPANT -->
+  <main id="participant">
+    <div class="rail" id="rail" aria-hidden="true"></div>
+    <section id="stepHost"></section>
+  </main>
+
+  <!-- FACILITATOR -->
+  <main id="facilitator" class="hidden">
+    <div class="toolbar">
+      <button class="btn ghost" id="sortBtn" aria-pressed="false">Show widest spread first</button>
+      <button class="btn ghost" id="copyBlk">Copy blockers for Lucid</button>
+      <button class="btn ghost" id="demoBtn">Load demo data</button>
+      <button class="btn ghost" id="clearBtn">Clear</button>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="fac-grid">
+      <div id="board"></div>
+      <aside>
+        <div class="panel" style="margin-bottom:16px">
+          <details class="paste" id="pasteBox" open>
+            <summary>Paste receipts</summary>
+            <p style="font-size:.88rem;color:var(--slate);margin:6px 0">Select all receipt stickies in Lucid (or the Teams chat), copy, and paste here. Duplicates from the same name and scope keep the latest one.</p>
+            <textarea id="pasteArea" style="min-height:160px;font-family:var(--mono);font-size:.8rem" placeholder="#AGW1 …"></textarea>
+            <div class="errors" id="errors"></div>
+          </details>
+        </div>
+        <div class="panel">
+          <h3>Examples and blockers</h3>
+          <div id="blockers"><p style="color:var(--slate);font-size:.9rem">Notes appear here once receipts are pasted.</p></div>
+        </div>
+      </aside>
+    </div>
+  </main>
+</div>
+<div id="tip" class="hidden" role="tooltip"></div>
+
+<script>
+// Statements copied verbatim from workshop/assessment.md; keep wording stable across repeats.
+const CAPS = [
+  {k:"C", short:"Context", name:"Context Engineering & Knowledge Management", items:[
+    ["C1","Relevant product, architecture and codebase knowledge is prepared in a form AI coding tools can use.","Repository guidance or architectural/product context supplied to an agent."],
+    ["C2","Relevant knowledge from existing sources can be brought into an approved AI coding workflow when needed.","Appropriate Jira, Confluence or diagram content used with an agent; this need not be a direct integration."],
+    ["C3","Context supplied to AI coding tools is updated when the underlying product or system changes.","Maintained guidance, review practice or ownership that prevents stale instructions."]]},
+  {k:"P", short:"Product", name:"Product Management & Ownership", items:[
+    ["P1","Product owners and engineers agree on the intended behaviour of AI-assisted work before implementation starts.","Refinement or an agreed example of intended Payment behaviour."],
+    ["P2","Acceptance criteria for AI-assisted work specify behaviour that can be checked at sign-off.","Expected outcomes and relevant edge cases."],
+    ["P3","The team uses small prototypes to clarify uncertain product behaviour before committing to full implementation.","Prototype used for PO/user feedback; choose ? if no relevant uncertainty has arisen."]]},
+  {k:"L", short:"Literacy", name:"Agentic Engineering Literacy", items:[
+    ["L1","People use approved AI coding assistants for actual engineering work.","OpenCode or Claude Code used to inspect code, plan or implement a change. Lack of access is a blocker to note, not an individual skill score."],
+    ["L2","People provide coding agents with task-specific context and constraints.","Relevant files, expected behaviour or boundaries supplied before execution."],
+    ["L3","People can use reusable agent instructions or approved integrations for recurring engineering tasks.","Skills or repository rules; where available, MCP connections or hooks. Name which part is actually observed."]]},
+  {k:"S", short:"SDLC", name:"Agentic SDLC", items:[
+    ["S1","For substantial changes, my team/working scope uses coding agents to clarify open questions and investigate existing behaviour before implementation.","Agent-supported research of existing code/behaviour before generation, with questions resolved or recorded."],
+    ["S2","The team follows a documented path from design and planning through AI-assisted implementation.","A workflow more than one contributor can follow."]]},
+  {k:"Q", short:"Quality & Security", name:"Quality & Security", items:[
+    ["Q1","AI-assisted changes are checked against expected behaviour with tests or other agreed verification before merge.","Automated tests and, where useful, TDD."],
+    ["Q2","For substantial AI-assisted changes, a human reviews the proposed approach before implementation begins.","Design/plan review; subsequent code review still applies where appropriate."],
+    ["Q3","AI coding tools operate under agreed repository-specific quality and security guardrails.","Stack-specific coding rules, agent permissions/access limits or required checks."]]},
+  {k:"B", short:"Blueprinting", name:"Blueprinting and Standardization", items:[
+    ["B1","Teams can find and reuse shared AI engineering practices or artifacts.","Skills, agents, rules or workflow blueprints."],
+    ["B2","Shared AI engineering artifacts have a clear way to be reviewed and maintained.","Maintainer and route for proposing changes."],
+    ["B3","Teams regularly exchange practical AI engineering learnings across team boundaries.","CoP, show-and-tell or another recurring exchange."]]},
+];
+const SCALE = [
+  ["0","Not established","I can observe the relevant work, and this practice is not yet used here."],
+  ["1","Ad hoc","The practice appears in isolated cases or depends on a particular person."],
+  ["2","Repeatable","Multiple people use an agreed approach for relevant work in this scope."],
+  ["3","Embedded","The approach is routinely used, maintained and improved in this scope."],
+  ["?","Can't judge","Insufficient visibility, or no relevant opportunity has occurred."],
+];
+const IDS = CAPS.flatMap(c => c.items.map(i => i[0]));
+const STORE = "agw-participant-v1", FSTORE = "agw-facilitator-v1";
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+// Strip anything that would break the receipt format when pasted back.
+const clean = s => String(s || "").replace(/#AGW1|#END|\[(?:[CPLSQB][1-3]|!)\]/gi, "").replace(/\s+/g, " ").trim();
+
+/* ---------- Receipt format ----------
+#AGW1 Name @ Team or working scope
+C 2 1 ? | P 1 1 0 | L 2 2 1 | S 1 0 | Q 2 1 1 | B 0 ? 0
+[C2] note text
+[!] what is blocking you
+#END
+Parsing does not rely on line breaks, since Lucid copy/paste may collapse them. */
+function encode(st){
+  const out = [`#AGW1 ${clean(st.name)} @ ${clean(st.scope)}`];
+  out.push(CAPS.map(c => c.k + " " + c.items.map(i => st.r[i[0]] ?? "-").join(" ")).join(" | "));
+  IDS.forEach(id => { const n = clean(st.n[id]); if (n) out.push(`[${id}] ${n}`); });
+  const b = clean(st.blocker); if (b) out.push(`[!] ${b}`);
+  out.push("#END");
+  return out.join("\n");
+}
+const V = "([0-3?\\-])";
+const RATING_RE = new RegExp(CAPS.map(c => c.k + c.items.map(() => "\\s+" + V).join("")).join("\\s*\\|\\s*"));
+function parseAll(text){
+  const people = new Map(), errors = [];
+  text.split("#AGW1").slice(1).forEach((chunk, idx) => {
+    chunk = chunk.split("#END")[0];
+    const m = chunk.match(RATING_RE);
+    if (!m){ errors.push(`Receipt ${idx + 1} could not be read: the rating line is incomplete.`); return; }
+    const head = chunk.slice(0, m.index).trim();
+    const at = head.indexOf(" @ ");
+    const name = (at < 0 ? head : head.slice(0, at)).trim() || "Unnamed";
+    const scope = at < 0 ? "" : head.slice(at + 3).trim();
+    const r = {}; IDS.forEach((id, i) => { if (m[i + 1] !== "-") r[id] = m[i + 1]; });
+    const n = {}; let blocker = "";
+    const rest = chunk.slice(m.index + m[0].length);
+    const parts = rest.split(/\[((?:[CPLSQB][1-3])|!)\]/);
+    for (let i = 1; i < parts.length; i += 2){
+      const t = parts[i + 1].trim(); if (!t) continue;
+      if (parts[i] === "!") blocker = t; else n[parts[i]] = t;
+    }
+    people.set((name + "|" + scope).toLowerCase(), {name, scope, r, n, blocker});
+  });
+  return {people:[...people.values()], errors};
+}
+
+/* ---------- Participant ---------- */
+let st = JSON.parse(localStorage.getItem(STORE) || "null") || {step:0, name:"", scope:"", r:{}, n:{}, blocker:""};
+const save = () => localStorage.setItem(STORE, JSON.stringify(st));
+const STEPS = 1 + CAPS.length + 1 + 1; // intro, six capabilities, blocker, receipt
+
+function renderRail(){
+  $("#rail").innerHTML = Array.from({length:STEPS}, (_, i) =>
+    `<span class="${i < st.step ? "done" : i === st.step ? "now" : ""}"></span>`).join("");
+}
+function renderStep(){
+  renderRail();
+  const host = $("#stepHost"), s = st.step;
+  if (s === 0){
+    host.innerHTML = `<div class="step">
+      <h2>How does your team work with coding agents today?</h2>
+      <p class="lede">Rate 17 short statements for the team or working scope you can actually observe. This describes practice, not anyone's skill, and nothing is averaged into a score. Your ratings stay on this device until you copy them.</p>
+      <label class="field">Your name<input type="text" id="fName" autocomplete="name" value="${esc(st.name)}"></label>
+      <label class="field">Team or working scope<small>For example your team, or a cross-team scope if that's what you see.</small><input type="text" id="fScope" value="${esc(st.scope)}"></label>
+      <div class="warn hidden" id="w0">Add your name and scope so the room can talk through differences in context.</div>
+      <div class="nav"><span></span><button class="btn" id="next">Start rating</button></div></div>`;
+    $("#fName").oninput = e => { st.name = e.target.value; save(); };
+    $("#fScope").oninput = e => { st.scope = e.target.value; save(); };
+    $("#next").onclick = () => { if (!clean(st.name) || !clean(st.scope)) { $("#w0").classList.remove("hidden"); return; } go(1); };
+    $("#fName").focus();
+    return;
+  }
+  if (s <= CAPS.length){
+    const c = CAPS[s - 1];
+    host.innerHTML = `<div class="step">
+      <h2>${esc(c.name)}</h2>
+      <p class="lede">Choose what you observe in ${esc(clean(st.scope) || "your scope")} now, not what you'd like to see. A 0 doesn't mean anyone has failed.</p>
+      ${c.items.map(([id, q, ex]) => `<div class="stmt" id="s-${id}">
+        <div class="id">${id}</div><p class="q">${esc(q)}</p><p class="ex">${esc(ex)}</p>
+        <div class="scale" role="group" aria-label="Rating for ${id}">
+          ${SCALE.map(([v, l, d]) => `<button type="button" data-id="${id}" data-v="${v}" title="${esc(d)}" aria-pressed="${st.r[id] === v}"><b>${v}</b><span>${l}</span></button>`).join("")}
+        </div>
+        <button type="button" class="note-toggle" data-note="${id}">${st.n[id] ? "Edit" : "Add"} an example or blocker</button>
+        <textarea class="${st.n[id] ? "" : "hidden"}" data-nt="${id}" aria-label="Example or blocker for ${id}" placeholder="What you've seen, or what's in the way">${esc(st.n[id] || "")}</textarea>
+      </div>`).join("")}
+      <div class="warn hidden" id="wc">Rate every statement, or choose ? if you can't judge it.</div>
+      <div class="nav"><button class="btn ghost" id="back">Back</button><button class="btn" id="next">${s === CAPS.length ? "Last question" : "Next capability"}</button></div></div>`;
+    host.querySelectorAll(".scale button").forEach(b => b.onclick = () => {
+      st.r[b.dataset.id] = b.dataset.v; save();
+      b.parentElement.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+      $("#s-" + b.dataset.id).classList.remove("missing");
+    });
+    host.querySelectorAll("[data-note]").forEach(b => b.onclick = () => {
+      const t = host.querySelector(`[data-nt="${b.dataset.note}"]`); t.classList.remove("hidden"); t.focus();
+    });
+    host.querySelectorAll("[data-nt]").forEach(t => t.oninput = () => { st.n[t.dataset.nt] = t.value; save(); });
+    $("#back").onclick = () => go(s - 1);
+    $("#next").onclick = () => {
+      const miss = c.items.filter(i => !st.r[i[0]]);
+      miss.forEach(i => $("#s-" + i[0]).classList.add("missing"));
+      if (miss.length){ $("#wc").classList.remove("hidden"); $("#s-" + miss[0][0]).scrollIntoView({block:"center"}); return; }
+      go(s + 1);
+    };
+    return;
+  }
+  if (s === CAPS.length + 1){
+    host.innerHTML = `<div class="step">
+      <h2>What is blocking you or simply not working right now?</h2>
+      <p class="lede">One or two sentences. Missing access or an unresolved dependency belongs here too.</p>
+      <label class="field">Blocker<textarea id="fBlk" style="min-height:120px">${esc(st.blocker)}</textarea></label>
+      <div class="nav"><button class="btn ghost" id="back">Back</button><button class="btn" id="next">Print my receipt</button></div></div>`;
+    $("#fBlk").oninput = e => { st.blocker = e.target.value; save(); };
+    $("#fBlk").focus();
+    $("#back").onclick = () => go(s - 1);
+    $("#next").onclick = () => go(s + 1, true);
+    return;
+  }
+  const code = encode(st);
+  host.innerHTML = `<div class="receipt-stage">
+    <div class="receipt ${renderStep.animate ? "print" : ""}" aria-label="Your receipt">
+      <div class="head"><strong>Engineering-practice check</strong>MMS Payment, 30 Sept 2026</div>
+      <div class="row"><span>${esc(clean(st.name))}</span><span>${esc(clean(st.scope))}</span></div>
+      ${CAPS.map(c => `<div class="row"><span>${esc(c.short)}</span><span class="dots">${c.items.map(i => st.r[i[0]]).join("")}</span></div>`).join("")}
+      <pre id="code">${esc(code)}</pre>
+    </div>
+    <button class="btn" id="copy">Copy receipt</button>
+    <div class="copied" id="copied" aria-live="polite"></div>
+    <div class="after">
+      <ol>
+        <li>Paste it as one sticky note in the <b>Assessment drop zone</b> on the Lucid board.</li>
+        <li>If Lucid isn't working for you, paste it into the Teams meeting chat instead.</li>
+      </ol>
+      <div class="nav"><button class="btn ghost" id="back">Change my answers</button><button class="btn ghost" id="reset">Start over</button></div>
+    </div></div>`;
+  renderStep.animate = false;
+  $("#copy").onclick = async () => {
+    try { await navigator.clipboard.writeText(code); $("#copied").textContent = "Copied. Now paste it into Lucid."; }
+    catch { const r = document.createRange(); r.selectNodeContents($("#code")); getSelection().removeAllRanges(); getSelection().addRange(r);
+            $("#copied").textContent = "Receipt selected. Press Ctrl+C or Cmd+C to copy it."; }
+  };
+  $("#back").onclick = () => go(1);
+  $("#reset").onclick = () => { if (confirm("Clear all your answers on this device?")) { localStorage.removeItem(STORE); st = {step:0, name:"", scope:"", r:{}, n:{}, blocker:""}; renderStep(); } };
+}
+function go(n, animate){ st.step = n; save(); renderStep.animate = !!animate; renderStep(); window.scrollTo(0, 0); }
+
+/* ---------- Facilitator ---------- */
+let sortBySpread = false, lastPeople = [];
+const initials = n => n.split(/\s+/).filter(Boolean).map(w => w[0]).join("").slice(0, 3).toUpperCase() || "?";
+// "Wide spread" = numeric ratings that are two or more levels apart. Deliberately no mean.
+function spreadOf(id, people){
+  const v = people.map(p => p.r[id]).filter(x => x && x !== "?").map(Number);
+  return v.length < 2 ? 0 : Math.max(...v) - Math.min(...v);
+}
+function renderFac(){
+  const {people, errors} = parseAll($("#pasteArea").value);
+  lastPeople = people;
+  localStorage.setItem(FSTORE, $("#pasteArea").value);
+  $("#errors").innerHTML = errors.map(esc).join("<br>");
+  $("#count").textContent = `${people.length} receipt${people.length === 1 ? "" : "s"}`;
+  $("#legend").innerHTML = SCALE.map(([v, l]) => `<span><i style="background:var(--r${v === "?" ? "q" : v})"></i>${v} ${l}</span>`).join("")
+    + `<span><i style="background:var(--paper);box-shadow:0 0 0 1.5px var(--ink)"></i>ringed = has a note</span><span style="color:var(--flag);font-weight:700">Left edge = ratings two or more levels apart</span>`;
+  const chip = (p, id) => {
+    const v = p.r[id], note = p.n[id];
+    return `<button class="chip v${v === "?" ? "q" : v}${note ? " has-note" : ""}" data-tip="${esc(p.name)}${p.scope ? " (" + esc(p.scope) + ")" : ""}${note ? ": " + esc(note) : ""}">${esc(initials(p.name))}</button>`;
+  };
+  const row = ([id, q]) => {
+    const sp = spreadOf(id, people), unk = people.filter(p => p.r[id] === "?").length;
+    return `<div class="srow ${sp >= 2 ? "spread" : ""}"><div class="t"><b>${id}</b>${esc(q)}
+      ${sp >= 2 ? `<div class="tag">Ratings differ. Ask about scope.</div>` : ""}${unk && people.length && unk >= people.length / 2 ? `<div class="tag" style="color:var(--slate)">Half or more can't judge this</div>` : ""}</div>
+      <div class="cols">${SCALE.map(([v]) => `<div class="col"><div class="h">${v}</div>${people.filter(p => p.r[id] === v).map(p => chip(p, id)).join("")}</div>`).join("")}</div></div>`;
+  };
+  if (sortBySpread){
+    const all = CAPS.flatMap(c => c.items).map(i => [i, spreadOf(i[0], people)]).sort((a, b) => b[1] - a[1]);
+    $("#board").innerHTML = `<section class="cap"><h4>All statements, widest spread first</h4>${all.map(([i]) => row(i)).join("")}</section>`;
+  } else {
+    $("#board").innerHTML = CAPS.map(c => `<section class="cap"><h4>${esc(c.name)}</h4>${c.items.map(row).join("")}</section>`).join("");
+  }
+  const byCap = CAPS.map(c => ({c, notes: people.flatMap(p => c.items.filter(i => p.n[i[0]]).map(i => ({id:i[0], p, t:p.n[i[0]]})))}));
+  const general = people.filter(p => p.blocker);
+  const html = byCap.filter(x => x.notes.length).map(x => `<div class="blk-cap">${esc(x.c.name)}</div>` + x.notes.map(o =>
+      `<div class="blk"><b>${o.id}</b> ${esc(o.t)}<div class="who">${esc(o.p.name)}${o.p.scope ? ", " + esc(o.p.scope) : ""}</div></div>`).join("")).join("")
+    + (general.length ? `<div class="blk-cap">What is blocking you right now?</div>` + general.map(p =>
+      `<div class="blk">${esc(p.blocker)}<div class="who">${esc(p.name)}${p.scope ? ", " + esc(p.scope) : ""}</div></div>`).join("") : "");
+  $("#blockers").innerHTML = html || `<p style="color:var(--slate);font-size:.9rem">Notes appear here once receipts are pasted.</p>`;
+}
+function blockersText(){
+  const lines = [];
+  CAPS.forEach(c => lastPeople.forEach(p => c.items.forEach(([id]) => { if (p.n[id]) lines.push(`${c.name} | ${id} | ${p.n[id]} (${p.name}${p.scope ? ", " + p.scope : ""})`); })));
+  lastPeople.forEach(p => { if (p.blocker) lines.push(`Blocking now | ${p.blocker} (${p.name}${p.scope ? ", " + p.scope : ""})`); });
+  return lines.join("\n");
+}
+// Clearly fictional sample receipts for rehearsing the facilitator view.
+function demoData(){
+  const names = ["Demo Ada","Demo Ben","Demo Cleo","Demo Dan","Demo Eva","Demo Finn","Demo Gus","Demo Hana"];
+  const scopes = ["Demo team A","Demo team B","Cross-team demo"];
+  let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  return names.map((name, i) => {
+    const r = {}, n = {};
+    IDS.forEach(id => { const x = rnd(); r[id] = x < .12 ? "?" : String(Math.min(3, Math.floor(rnd() * 4))); });
+    if (i % 3 === 0) n.C2 = "Sample note: cannot bring wiki pages into the agent yet.";
+    if (i % 4 === 1) n.Q3 = "Sample note: no agreed agent permissions for this repo.";
+    return encode({name, scope:scopes[i % 3], r, n, blocker: i % 2 ? "" : "Sample blocker text for rehearsal."});
+  }).join("\n\n");
+}
+
+/* ---------- Routing ---------- */
+function route(){
+  const fac = location.hash === "#facilitate";
+  document.body.classList.toggle("fac", fac);
+  $("#participant").classList.toggle("hidden", fac);
+  $("#facilitator").classList.toggle("hidden", !fac);
+  $("#modeLink").textContent = fac ? "Participant view" : "Facilitator view";
+  $("#modeLink").href = fac ? "#" : "#facilitate";
+  $("#title").textContent = fac ? "Engineering-practice check: room view" : "Engineering-practice check";
+  if (fac){ $("#pasteArea").value ||= localStorage.getItem(FSTORE) || ""; renderFac(); } else renderStep();
+}
+$("#pasteArea").oninput = renderFac;
+$("#sortBtn").onclick = e => { sortBySpread = !sortBySpread; e.target.setAttribute("aria-pressed", sortBySpread); e.target.textContent = sortBySpread ? "Show in agenda order" : "Show widest spread first"; renderFac(); };
+$("#demoBtn").onclick = () => { $("#pasteArea").value = demoData(); renderFac(); };
+$("#clearBtn").onclick = () => { if (confirm("Remove all pasted receipts from this view?")) { $("#pasteArea").value = ""; renderFac(); } };
+$("#copyBlk").onclick = async () => { const t = blockersText(); try { await navigator.clipboard.writeText(t); $("#copyBlk").textContent = "Copied"; setTimeout(() => $("#copyBlk").textContent = "Copy blockers for Lucid", 1500); } catch { prompt("Copy the blockers:", t); } };
+const tip = $("#tip");
+document.addEventListener("mouseover", e => { const c = e.target.closest("[data-tip]"); if (!c) return tip.classList.add("hidden"); tip.textContent = c.dataset.tip; tip.classList.remove("hidden"); });
+document.addEventListener("mousemove", e => { tip.style.left = Math.min(e.clientX + 12, innerWidth - 310) + "px"; tip.style.top = (e.clientY + 14) + "px"; });
+document.addEventListener("focusin", e => { const c = e.target.closest("[data-tip]"); if (!c) return tip.classList.add("hidden"); const b = c.getBoundingClientRect(); tip.textContent = c.dataset.tip; tip.style.left = b.left + "px"; tip.style.top = (b.bottom + 6) + "px"; tip.classList.remove("hidden"); });
+addEventListener("hashchange", route);
+route();
+</script>
+</body>
+</html>
