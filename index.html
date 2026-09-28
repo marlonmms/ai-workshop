@@ -205,10 +205,10 @@ const CAPS = [
     ["B3","Teams regularly exchange practical AI engineering learnings across team boundaries.","CoP, show-and-tell or another recurring exchange."]]},
 ];
 const SCALE = [
-  ["0","Not established","I can observe the relevant work, and this practice is not yet used here."],
+  ["0","Not established","I can observe the relevant work, and this practice is not yet used in my team / working scope."],
   ["1","Ad hoc","The practice appears in isolated cases or depends on a particular person."],
-  ["2","Repeatable","Multiple people use an agreed approach for relevant work in this scope."],
-  ["3","Embedded","The approach is routinely used, maintained and improved in this scope."],
+  ["2","Repeatable","Multiple people use an agreed approach for relevant work in my team / working scope."],
+  ["3","Embedded","The approach is routinely used, maintained and improved in my team / working scope."],
   ["?","Can't judge","I cannot judge from what I observe, or this practice has not had a relevant opportunity to occur. Note which reason applies if useful."],
 ];
 const IDS = CAPS.flatMap(c => c.items.map(i => i[0]));
@@ -289,7 +289,7 @@ function renderStep(){
     host.innerHTML = `<div class="step">
       <h2>${esc(c.name)}</h2>
       <p class="lede">Choose what you observe in ${esc(clean(st.scope) || "your scope")} now, not what you'd like to see. A 0 doesn't mean anyone has failed.</p>
-      <details class="levels" open><summary>What the levels mean</summary><dl>
+      <details class="levels" open><summary>What the levels mean for my team / working scope</summary><dl>
         ${SCALE.map(([v, l, d]) => `<dt><i style="background:var(--r${v === "?" ? "q" : v})"></i>${v} ${l}</dt><dd>${esc(d)}</dd>`).join("")}
       </dl></details>
       ${c.items.map(([id, q, ex]) => `<div class="stmt" id="s-${id}">
