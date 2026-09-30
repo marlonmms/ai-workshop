@@ -181,19 +181,19 @@ details.paste summary{cursor:pointer;font-weight:700}
 // Statements copied verbatim from workshop/assessment.md; keep wording stable across repeats.
 const CAPS = [
   {k:"C", short:"Context", name:"Context Engineering & Knowledge Management", items:[
-    ["C1","Relevant product, architecture and codebase knowledge is prepared in a form AI coding tools can use.","Repository guidance or architectural/product context supplied to an agent."],
-    ["C2","Relevant knowledge from existing sources can be brought into an approved AI coding workflow when needed.","Appropriate Jira, Confluence or diagram content used with an agent; this need not be a direct integration."],
+    ["C1","Engineering best practices are captured in a structured library of Markdown files that AI coding agents can consult.","Findable, maintained guidance on architecture, coding conventions or engineering workflows."],
+    ["C2","Relevant knowledge can be brought into an approved AI coding workflow when needed.","Appropriate Jira, Confluence, other-repository or diagram content used with an agent, for example through an approved MCP integration."],
     ["C3","Context supplied to AI coding tools is updated when the underlying product or system changes.","Maintained guidance, review practice or ownership that prevents stale instructions."]]},
   {k:"P", short:"Product", name:"Product Management & Ownership", items:[
-    ["P1","Product owners and engineers agree on the intended behaviour of AI-assisted work before implementation starts.","Refinement or an agreed example of intended Payment behaviour."],
-    ["P2","Acceptance criteria for AI-assisted work specify behaviour that can be checked at sign-off.","Expected outcomes and relevant edge cases."],
-    ["P3","The team uses small prototypes to clarify uncertain product behaviour before committing to full implementation.","Prototype used for PO/user feedback; choose ? if no relevant uncertainty has arisen."]]},
+    ["P1","A product knowledge base describes the domain context, product language, use cases and user journeys relevant to the team’s work.","A shared glossary and descriptions of key Payment journeys or use cases."],
+    ["P2","Product stories are refined enough for an agent to take on a bounded implementation task.","Intent, scope, relevant edge cases and checkable acceptance criteria supplied in the agent’s task context or retrieved from Jira, for example via MCP."],
+    ["P3","When consequential product or technical uncertainty arises, the team uses a small prototype or spike to inform the implementation decision.","A prototype used for PO/user feedback, or engineers exploring an alternative backend implementation."]]},
   {k:"L", short:"Literacy", name:"Agentic Engineering Literacy", items:[
-    ["L1","People use approved AI coding assistants for actual engineering work.","OpenCode or Claude Code used to inspect code, plan or implement a change. Lack of access is a blocker to note, not an individual skill score."],
-    ["L2","People provide coding agents with task-specific context and constraints.","Relevant files, expected behaviour or boundaries supplied before execution."],
-    ["L3","People can use reusable agent instructions or approved integrations for recurring engineering tasks.","Skills or repository rules; where available, MCP connections or hooks. Name which part is actually observed."]]},
+    ["L1","People use approved AI coding assistants for actual engineering work.","OpenCode or Claude Code used to inspect code, plan or implement a change."],
+    ["L2","The team uses agentic techniques beyond ad hoc prompting where they help with engineering work.","Reusable skills, specialised agents, MCP integrations, rules/instructions, hooks or other supporting tools; name what is actually in use."],
+    ["L3","The team chooses models and reasoning effort to suit the task, taking capability and cost into account.","Explaining when a task warrants a different model or thinking level, and considering its cost relative to the work."]]},
   {k:"S", short:"SDLC", name:"Agentic SDLC", items:[
-    ["S1","For substantial changes, my team/working scope uses coding agents to clarify open questions and investigate existing behaviour before implementation.","Agent-supported research of existing code/behaviour before generation, with questions resolved or recorded."],
+    ["S1","For substantial agent-assisted changes, the team works from a written, reviewed plan rather than starting with code generation.","Engineers review the proposed approach, steps and verification plan, then use it to guide and adjust implementation."],
     ["S2","The team follows a documented path from design and planning through AI-assisted implementation.","A workflow more than one contributor can follow."]]},
   {k:"Q", short:"Quality & Security", name:"Quality & Security", items:[
     ["Q1","AI-assisted changes are checked against expected behaviour with tests or other agreed verification before merge.","Automated tests and, where useful, TDD."],
